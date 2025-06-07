@@ -359,6 +359,9 @@ class WrapperBVG:
 
         for real_image_tensor in evaluation_dataloader:
             
+            # move the device
+            real_image_tensor : torch.Tensor = real_image_tensor.to(self.device)
+
             with torch.no_grad():
                 reconstruction_tensor = self.direct_reconstruction(real_image_tensor)
             
