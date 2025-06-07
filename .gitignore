@@ -47,8 +47,9 @@ test/data/legacy_serialized.pt
 wandb/
 
 # Ignore Singularity and scripts
-#scripts/
-#singularity/
+scripts/
+scripts/*.ps1
+singularity/
 dataset/
 
 # Ingore testings
