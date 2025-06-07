@@ -56,7 +56,7 @@ class ReconstructionDataset(Dataset):
             print("> Load Files to Memory !")
             self.__load_to_memory()
 
-        print(f"Loaded '{self.subset}' with {len(self.image_files_paths)} | Cache : {len(self.image_array_list)}")
+        print(f"| Loaded '{self.subset}' with {len(self.image_files_paths)} | Cache : {len(self.image_array_list)}")
 
     def __load_to_memory(self) -> None:
         for fpath in self.image_files_paths:

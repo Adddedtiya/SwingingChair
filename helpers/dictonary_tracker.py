@@ -103,7 +103,7 @@ class TrackerAndLogger:
         if value_metric > self.current_best_val:
             self.is_current_best  = True
             self.current_best_val = value_metric
-            print(f"# Epoch {len(self.eval_values.items)} is Best {self.current_best_val}")
+            print(f"| Epoch {len(self.eval_values.items)} is Best {self.current_best_val}")
         
     def write(self) -> None:
         self.train_values.export_csv(

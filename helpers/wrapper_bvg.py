@@ -326,18 +326,21 @@ class WrapperBVG:
         tracked_paramters = GenericDictonaryTracker()
 
         # Training Loop
-        for image_tensor in training_dataloader:
+        for sub_index, (image_tensor) in enumerate(training_dataloader):
+            
+            # display
+            print("|- Index :", sub_index)
 
             # Train VAE
-            print("# Training VAE")
+            print("|-- Training VAE")
             var_stats  = self.train_vae_single_batch(image_tensor, vae_beta_value)            
 
             # Train Critic
-            print("# Training Critic")
+            print("|-- Training Critic")
             crit_stats = self.train_gan_critic_iter(critic_dataloader, critic_iter, critic_lgp)
 
             # Train Generator (VAE - Decoder)
-            print("# Training Generator-Decoder")
+            print("|-- Training Generator-Decoder")
             gen_stats = self.train_gan_generator_iter(image_tensor)
 
             # combine all stats

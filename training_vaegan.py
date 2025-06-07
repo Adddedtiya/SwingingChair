@@ -85,7 +85,7 @@ if __name__ == "__main__":
     print("| Setup Complete Start Training !")    
     for current_epoch in range(total_epochs):
 
-        print(f"# Current Epoch {current_epoch + 1}/{total_epochs}")
+        print(f"| Current Epoch {current_epoch + 1}/{total_epochs}")
         
         # Train the Model For a single epoch
         train_stats = model_wrapper.train_single_epoch(
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         )
 
         # Evaluate the model
-        print("# Training Complete, Evaluating...")
+        print("| Training Complete, Evaluating...")
         eval_stats = model_wrapper.evaluate_single_epoch(dataloader_eval)
 
         # track the stats
@@ -109,16 +109,20 @@ if __name__ == "__main__":
         # check if the current epoch is best
         if logger.current_is_best():
             
-            print("# Current Epoch is Best !")
+            print("| Current Epoch is Best !")
 
             # it is, so save the model
             model_wrapper.save_state(
                 os.path.join(logger.weights_dir, 'weights_best.pt')
             )
 
+        # dont forget to write the samples
+        logger.save_samples(model_wrapper.sample_generator(),           f'{current_epoch}_static.png')
+        logger.save_samples(model_wrapper.sample_generator(batch_size), f'{current_epoch}_random.png')
+
         # write stats
         logger.write()
-        print()
+        print("|")
 
     print("| Training is Complete !")
 
