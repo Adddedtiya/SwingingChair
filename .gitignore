@@ -54,3 +54,4 @@ dataset/
 
 # Ingore testings
 amx_*
+*.pt

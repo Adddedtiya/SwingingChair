@@ -4,6 +4,7 @@ import torch.nn             as nn
 import torch.nn.functional  as F
 
 from torch.utils.data import DataLoader, Dataset
+from einops import rearrange
 
 import cv2             as cv
 import albumentations  as A
@@ -36,12 +37,12 @@ class ReconstructionDataset(Dataset):
 
         # base augmentation procesing
         self.prepare_images = A.Compose([
-            A.SmallestMaxSize(self.img_load_size),
+            A.SmallestMaxSize(self.img_load_size, interpolation = cv.INTER_NEAREST),
         ])
 
         # image augmentation goes here !
         self.transform_image = A.Compose([
-            A.Affine(scale = 1, translate_px = [-10, 10], rotate = [-50, 50], p = 1.0 ),
+            A.Affine(scale = 1, translate_px = [-5, 5], rotate = [-50, 50], p = 1.0),
             A.VerticalFlip(),
             A.HorizontalFlip(),
             A.RandomCrop(self.img_final_size, self.img_final_size, p = 1.0),
@@ -52,9 +53,10 @@ class ReconstructionDataset(Dataset):
         # load to memory if flag is enabled
         self.image_array_list : list[np.ndarray] = []
         if self.memory:
+            print("> Load Files to Memory !")
             self.__load_to_memory()
 
-        print(f"Loaded '{self.subset}' with {len(self.image_files_paths)}")
+        print(f"Loaded '{self.subset}' with {len(self.image_files_paths)} | Cache : {len(self.image_array_list)}")
 
     def __load_to_memory(self) -> None:
         for fpath in self.image_files_paths:
@@ -64,9 +66,9 @@ class ReconstructionDataset(Dataset):
     def __load_image_manual(self, fpath : str) -> np.ndarray:
         # read image as grayscale
         original_image = cv.imread(fpath, cv.IMREAD_GRAYSCALE)
-        
+
         # expand the color dimension
-        original_image : np.ndarray = np.expand_dims(original_image, axis = 0)
+        original_image : np.ndarray = rearrange(original_image, 'h w -> h w 1')
 
         # MinMax this time ?
         original_image : np.ndarray = original_image.astype(np.float32)
@@ -75,7 +77,7 @@ class ReconstructionDataset(Dataset):
         original_image : np.ndarray = self.prepare_images(image = original_image)['image']
         original_image : np.ndarray = np.clip(original_image, 0, 1)
         original_image : np.ndarray = original_image.astype(np.float32)
-
+        
         return original_image
 
     def __grab_image(self, index : int) -> np.ndarray:
@@ -101,6 +103,7 @@ class ReconstructionDataset(Dataset):
         image_array : np.ndarray = self.transform_image(image = image_array)['image']
         image_array : np.ndarray = np.clip(image_array, 0, 1)
         image_array : np.ndarray = image_array.astype(np.float32)
+        image_array : np.ndarray = rearrange(image_array, 'h w c -> c h w')
 
         return image_array
     

@@ -49,6 +49,7 @@ if __name__ == "__main__":
     print("| Device      :", device)
     print("| Latent      :", latent_size)
     print("| Name        :", exp_name)
+    print("| Mem-Only    :", memory_cache)
 
     # create Trackers
     logger = TrackerAndLogger('./runs', exp_name, metric_to_track = 'ssim')
@@ -68,13 +69,14 @@ if __name__ == "__main__":
     )
 
     # Create Dataset
-    training_dataset   = ReconstructionDataset(dataset_root, 'train', memory_cache)
+    training_vae_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache)
+    training_crt_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache)
+    evaluation_dataset   = ReconstructionDataset(dataset_root, 'eval',  memory_cache)
     #testing_dataset   = ReconstructionDataset(dataset_root, 'test',  memory_cache)
-    evaluation_dataset = ReconstructionDataset(dataset_root, 'eval',  memory_cache)
 
     # create dataloaders - main loop + critic
-    dataloader_train_main = training_dataset.create_dataloader(batch_size, load_threads, device)
-    dataloader_train_crit = training_dataset.create_dataloader(batch_size, load_threads, device)
+    dataloader_train_main = training_vae_dataset.create_dataloader(batch_size, load_threads, device)
+    dataloader_train_crit = training_crt_dataset.create_dataloader(batch_size, load_threads, device)
 
     # create dataloader for test and eval
     #dataloader_test = testing_dataset.create_dataloader(1, 0, device)
