@@ -184,7 +184,7 @@ class WrapperBVG:
             self.critic_gan_model.zero_grad()
 
             # grab the input_tensor size
-            image_tensor : torch.Tensor = image_tensor
+            image_tensor : torch.Tensor = image_tensor.to(self.device)
             batch_size, image_channels, image_H, image_W = image_tensor.shape
 
             # create fake noise with no gradients
