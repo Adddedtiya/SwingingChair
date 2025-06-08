@@ -129,6 +129,34 @@ class TrackerAndLogger:
     def current_is_best(self) -> bool:
         return self.is_current_best
 
+    def combined_plot(
+            self, 
+            training_keys   : list[str] = [], 
+            evaluation_keys : list[str] = [], 
+            title : str = "", 
+            fname : str = 'combined.png'
+        ) -> None:
+
+        # plot the data
+
+        # plot training values first
+        for tkey in training_keys:
+            vals = [x[tkey] for x in self.train_values.items]
+            plt.plot(vals, label = f'train-{tkey}')
+        
+        # plot eval values
+        for tkey in evaluation_keys:
+            vals = [x[tkey] for x in self.eval_values.items]
+            plt.plot(vals, label = f'eval-{tkey}')
+
+        fpath = os.path.join(self.tracking_dir, fname),
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Values")
+        plt.title(title)
+        plt.legend()
+        plt.savefig(fpath)
+        plt.clf()
 
 
 

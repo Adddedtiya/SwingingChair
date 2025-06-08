@@ -7,8 +7,7 @@ import numpy as np
 
 from data.dataset_reconstruction import ReconstructionDataset
 from helpers.dictonary_tracker   import TrackerAndLogger
-from helpers.wrapper_bvg         import WrapperBVG
-from models.model_sibav         import SimpleCritic, SimpleEncoder, SimpleDecoder
+from helpers.wrapper_sae         import WrapperSAE
 
 # Deterministic Algorithms
 SEED = 424242
@@ -20,7 +19,7 @@ np.random.seed(SEED)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
-    print("## Training VAE-WGAN ##")
+    print("## Training SAE ##")
 
     # setup args
     parser = argparse.ArgumentParser(description = "VAE-GAN Training configuration")
@@ -31,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset_root', type = str, default = '')
     parser.add_argument('--name'        , type = str, default = '')
     parser.add_argument('--memory_cache', action = 'store_true')
+    parser.add_argument('--color',        action = 'store_true')
 
     # Prase the Arguemnts
     parsed_args  = parser.parse_args()    
@@ -41,6 +41,7 @@ if __name__ == "__main__":
     dataset_root : str  = parsed_args.dataset_root
     exp_name     : str  = parsed_args.name
     memory_cache : bool = parsed_args.memory_cache
+    use_colour   : bool = parsed_args.color
 
     print("| Pytorch Model Training !")
     print("| Total Epoch :", total_epochs)
@@ -54,33 +55,26 @@ if __name__ == "__main__":
     # create Trackers
     logger = TrackerAndLogger('./runs', exp_name, metric_to_track = 'ssim')
 
-    # Create The Model
-    model_encoder = SimpleEncoder(1, latent_size)
-    model_decoder = SimpleDecoder(latent_size, 1)
-    model_critic  = SimpleCritic(1)
+    # for model and dataloader
+    colour_channels = 3 if use_colour else 1
 
-    # Training Helper Wrapper
-    model_wrapper = WrapperBVG(
-        encoder = model_encoder,
-        decoder = model_decoder,
-        critic  = model_critic,
-        device  = device,
-        latent_size = latent_size
+    # create the model in the wrapper 
+    model_wrapper = WrapperSAE(
+        input_channels  = colour_channels,
+        output_channels = colour_channels,
+        latent_size     = latent_size,
+        device          = device
     )
 
     # Create Dataset
-    training_vae_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache)
-    training_crt_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache)
-    evaluation_dataset   = ReconstructionDataset(dataset_root, 'eval',  memory_cache)
-    #testing_dataset   = ReconstructionDataset(dataset_root, 'test',  memory_cache)
+    train_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache, use_colour)
+    eval_dataset  = ReconstructionDataset(dataset_root, 'eval',  memory_cache, use_colour)
+    test_dataset  = ReconstructionDataset(dataset_root, 'test',  memory_cache, use_colour)
 
-    # create dataloaders - main loop + critic
-    dataloader_train_main = training_vae_dataset.create_dataloader(batch_size, load_threads, device)
-    dataloader_train_crit = training_crt_dataset.create_dataloader(batch_size, load_threads, device)
-
-    # create dataloader for test and eval
-    #dataloader_test = testing_dataset.create_dataloader(1, 0, device)
-    dataloader_eval = evaluation_dataset.create_dataloader(batch_size, load_threads, device)
+    # create the dataloaders
+    loader_eval  = eval_dataset.create_dataloader(batch_size, load_threads, device, shuffle = False)
+    loader_test  = test_dataset.create_dataloader(batch_size, load_threads, device)
+    loader_train = train_dataset.create_dataloader(batch_size, load_threads, device)
 
     print("| Setup Complete Start Training !")    
     for current_epoch in range(total_epochs):
@@ -88,17 +82,11 @@ if __name__ == "__main__":
         print(f"| Current Epoch {current_epoch + 1}/{total_epochs}")
         
         # Train the Model For a single epoch
-        train_stats = model_wrapper.train_single_epoch(
-            dataloader_train_main,
-            dataloader_train_crit,
-            critic_iter    = 5,
-            critic_lgp     = 10,
-            vae_beta_value = 0.8
-        )
+        train_stats = model_wrapper.train_single_epoch(loader_train)
 
         # Evaluate the model
         print("| Training Complete, Evaluating...")
-        eval_stats = model_wrapper.evaluate_single_epoch(dataloader_eval)
+        eval_stats = model_wrapper.evaluate_single_epoch(loader_eval)
 
         # track the stats
         logger.append_epoch(
@@ -115,13 +103,26 @@ if __name__ == "__main__":
             model_wrapper.save_state(
                 os.path.join(logger.weights_dir, 'weights_best.pt')
             )
+        
+        # save the latest model too
+        model_wrapper.save_state(
+            os.path.join(logger.weights_dir, 'weights_latest.pt')
+        )
 
         # dont forget to write the samples
-        logger.save_samples(model_wrapper.sample_generator(),           f'{current_epoch}_static.png')
-        logger.save_samples(model_wrapper.sample_generator(batch_size), f'{current_epoch}_random.png')
+        logger.save_samples(model_wrapper.sample_generator(loader_eval), f'{current_epoch}_random.png')
 
         # write stats
         logger.write()
+
+        # plot the ssim over epochs
+        logger.combined_plot(
+            training_keys   = ['ssim'],
+            evaluation_keys = ['ssim'],
+            title = 'SSIM over Epochs',
+            fname = 'ssim_plot.png'
+        )
+
         print("|")
 
     print("| Training is Complete !")
@@ -132,15 +133,3 @@ if __name__ == "__main__":
     )
 
     print("| Wrapping Up")
-
-
-
-
-
-
-
-
-
-
-
-

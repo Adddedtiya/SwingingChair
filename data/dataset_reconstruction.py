@@ -13,8 +13,11 @@ import numpy           as np
 from .image_directory import scan_directory
 
 class ReconstructionDataset(Dataset):
-    def __init__(self, dataset_root : str, phase : str = 'train', memory : bool = False):
+    def __init__(self, dataset_root : str, phase : str = 'train', memory : bool = False, color : bool = False):
         super().__init__()
+
+        # for checking if color or grayscale
+        self.color = color
 
         # get the image paths of your dataset;
         self.image_files_paths : list[str] = []
@@ -63,12 +66,22 @@ class ReconstructionDataset(Dataset):
             image_array = self.__load_image_manual(fpath)
             self.image_array_list.append(image_array)
 
-    def __load_image_manual(self, fpath : str) -> np.ndarray:
-        # read image as grayscale
-        original_image = cv.imread(fpath, cv.IMREAD_GRAYSCALE)
+    def __load_image_file(self, fpath : str) -> np.ndarray:
+        if self.color:
+            # read the image as colour and to RGB
+            original_image : np.ndarray = cv.imread(fpath, cv.IMREAD_COLOR)
+            original_image : np.ndarray = cv.cvtColor(original_image, cv.COLOR_BGR2RGB)
+        else:
+            # read the image as grayscale and expand color dim
+            original_image : np.ndarray = cv.imread(fpath, cv.IMREAD_GRAYSCALE)
+            original_image : np.ndarray = rearrange(original_image, 'h w -> h w 1')
+        
+        # return the loaded image
+        return original_image
 
-        # expand the color dimension
-        original_image : np.ndarray = rearrange(original_image, 'h w -> h w 1')
+    def __load_image_manual(self, fpath : str) -> np.ndarray:
+        # read image 
+        original_image = self.__load_image_file(fpath)
 
         # MinMax this time ?
         original_image : np.ndarray = original_image.astype(np.float32)
@@ -107,7 +120,7 @@ class ReconstructionDataset(Dataset):
 
         return image_array
     
-    def create_dataloader(self, batch_size : int, total_workers : int, device : torch.device) -> DataLoader:
+    def create_dataloader(self, batch_size : int, total_workers : int, device : torch.device, shuffle : bool = True) -> DataLoader:
 
         # check variables and states
         total_workers = 0 if self.memory else total_workers
@@ -117,7 +130,7 @@ class ReconstructionDataset(Dataset):
         return DataLoader(
             self,
             batch_size         = batch_size,
-            shuffle            = True,
+            shuffle            = shuffle,
             pin_memory         = using_gpu,
             num_workers        = total_workers,
             persistent_workers = persistent
