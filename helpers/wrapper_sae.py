@@ -14,14 +14,10 @@ from einops import rearrange, reduce, repeat, einsum
 from torchmetrics.functional.image import peak_signal_noise_ratio
 from torchmetrics.functional.image import structural_similarity_index_measure
 
-from ..models.model_siav import LigweightAutoencoder
-
-
 class WrapperSAE:
     def __init__(
             self,
-            input_channels  : int,
-            output_channels : int,
+            autoencoder     : nn.Module,
             latent_size     : int,
             device          : torch.device = 'cpu' 
         ):
@@ -31,11 +27,7 @@ class WrapperSAE:
         self.latent_size = latent_size
 
         # create the autoencoder
-        self.autoencoder = LigweightAutoencoder(
-            input_channels  = input_channels,
-            latent_size     = latent_size,
-            output_channels = output_channels 
-        ).to(self.device)
+        self.autoencoder = autoencoder.to(self.device)
 
         # create the optimizer
         self.optimizer = torch.optim.AdamW(self.autoencoder.parameters(), lr = 2e-4)

@@ -8,6 +8,7 @@ import numpy as np
 from data.dataset_reconstruction import ReconstructionDataset
 from helpers.dictonary_tracker   import TrackerAndLogger
 from helpers.wrapper_sae         import WrapperSAE
+from models.model_siav           import LigweightAutoencoder
 
 # Deterministic Algorithms
 SEED = 424242
@@ -59,11 +60,15 @@ if __name__ == "__main__":
     colour_channels = 3 if use_colour else 1
 
     # create the model in the wrapper 
-    model_wrapper = WrapperSAE(
+    autoencoder_model = LigweightAutoencoder(
         input_channels  = colour_channels,
-        output_channels = colour_channels,
         latent_size     = latent_size,
-        device          = device
+        output_channels = colour_channels
+    )
+    model_wrapper = WrapperSAE(
+        autoencoder = autoencoder_model,
+        latent_size = latent_size,
+        device      = device
     )
 
     # Create Dataset
