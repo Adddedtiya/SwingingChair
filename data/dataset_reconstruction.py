@@ -12,6 +12,8 @@ import numpy           as np
 
 from .image_directory import scan_directory
 
+from tqdm import tqdm
+
 class ReconstructionDataset(Dataset):
     def __init__(self, dataset_root : str, phase : str = 'train', memory : bool = False, color : bool = False):
         super().__init__()
@@ -62,7 +64,7 @@ class ReconstructionDataset(Dataset):
         print(f"| Loaded '{self.subset}' with {len(self.image_files_paths)} | Cache : {len(self.image_array_list)}")
 
     def __load_to_memory(self) -> None:
-        for fpath in self.image_files_paths:
+        for fpath in tqdm(self.image_files_paths):
             image_array = self.__load_image_manual(fpath)
             self.image_array_list.append(image_array)
 
