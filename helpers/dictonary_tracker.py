@@ -137,7 +137,8 @@ class TrackerAndLogger:
             fname : str = 'combined.png'
         ) -> None:
 
-        # plot the data
+        # random issues on some machines
+        return
 
         # plot training values first
         for tkey in training_keys:
