@@ -137,9 +137,6 @@ class TrackerAndLogger:
             fname : str = 'combined.png'
         ) -> None:
 
-        # random issues on some machines
-        return
-
         # plot training values first
         for tkey in training_keys:
             vals = [x[tkey] for x in self.train_values.items]
@@ -150,7 +147,7 @@ class TrackerAndLogger:
             vals = [x[tkey] for x in self.eval_values.items]
             plt.plot(vals, label = f'eval-{tkey}')
 
-        fpath = os.path.join(self.tracking_dir, fname),
+        fpath = os.path.join(self.tracking_dir, fname)
 
         plt.xlabel("Epoch")
         plt.ylabel("Values")
