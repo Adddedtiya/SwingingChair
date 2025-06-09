@@ -30,8 +30,8 @@ class ReconstructionDataset(Dataset):
         self.is_training = bool(self.subset == 'train')
 
         # image shape
-        self.img_load_size  = 96
-        self.img_final_size = 64
+        self.img_final_size = 128
+        self.img_load_size  = self.img_final_size + (self.img_final_size // 2)
 
         # get the image directory
         image_root_directory = os.path.join(dataset_root, self.subset)  

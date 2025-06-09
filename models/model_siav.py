@@ -38,16 +38,22 @@ class LightweightDecoder(nn.Module):
             # N,  64, 32, 32
             SimpleResConv(64),
             SimpleResConv(64),
+            SimpleResConv(64),
             UpConvShuffle(64, 32, 2),
 
             # N,  32, 64, 64
             SimpleResConv(32),
-            SimpleResConv(32)
+            SimpleResConv(32),
+            UpConvShuffle(32, 16, 2),
+
+            # N,  16, 128, 128
+            SimpleResConv(16),
+            SimpleResConv(16),
         )
 
 
         self.head = nn.Sequential(
-            nn.Conv2d(32, output_channels, kernel_size = 3, padding = 'same', bias = True),
+            nn.Conv2d(16, output_channels, kernel_size = 3, padding = 'same', bias = True),
             nn.Sigmoid() 
         )
 
@@ -72,13 +78,18 @@ class LightweightEncoder(nn.Module):
         super().__init__()
 
         self.feet = nn.Sequential(
-            nn.Conv2d(input_channels, 32, kernel_size = 3, padding = 'same', bias = True),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(input_channels, 16, kernel_size = 3, padding = 'same', bias = True),
+            nn.BatchNorm2d(16),
             nn.LeakyReLU()
         )
 
         self.convolutional_layers = nn.Sequential(
             
+            # N,  16, 128, 128
+            SimpleResConv(16),
+            SimpleResConv(16),
+            DownAvgMaxPool(16, 32),
+
             # N,  32, 64, 64
             SimpleResConv(32),
             SimpleResConv(32),
@@ -217,7 +228,7 @@ if __name__ == "__main__":
     m = LigweightAutoencoder(1, 512, 1)
     m.eval()
 
-    t = torch.rand(1, 1, 64, 64)
+    t = torch.rand(1, 1, 128, 128)
 
     from torchinfo import summary
     summary(m, input_data = t)

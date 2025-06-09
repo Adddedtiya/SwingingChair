@@ -86,13 +86,17 @@ class WrapperSAE:
 
         # compute the loss and backprop
         recon_loss = F.mse_loss(reconstructed_image, image_tensor, reduction = 'mean')
-        recon_loss.backward()
+        psnr_loss  = 1.0 - peak_signal_noise_ratio(reconstructed_image, image_tensor)
+        
+        # combine the loss terms 
+        combined_loss = (psnr_loss + recon_loss) 
+        combined_loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
 
         # compute the training metrics
         batch_stats = self.__compute_metrics(image_tensor, reconstructed_image)
-        batch_stats['loss'] = float(recon_loss.item())
+        batch_stats['loss'] = float(combined_loss.item())
 
         return batch_stats
 
