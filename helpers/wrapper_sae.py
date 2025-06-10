@@ -37,9 +37,9 @@ class WrapperSAE:
 
     def save_state(self, fpath : str) -> None:
         x = {
-            'static_noise'         : self.static_noise,
+            'static_noise' : self.static_noise,
             'autoencoder'  : self.autoencoder.state_dict(),
-            'optimizer'            : self.optimizer.state_dict()
+            'optimizer'    : self.optimizer.state_dict()
         }
         # save the data dictonary
         torch.save(x, fpath)

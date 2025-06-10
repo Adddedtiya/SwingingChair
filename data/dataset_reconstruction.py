@@ -47,7 +47,7 @@ class ReconstructionDataset(Dataset):
 
         # image augmentation goes here !
         self.transform_image = A.Compose([
-            A.Affine(scale = 1, translate_px = [-5, 5], rotate = [-50, 50], p = 1.0),
+            A.Affine(scale = 1, translate_px = [-5, 5], rotate = [-50, 50], shear = [-30, 30], p = 1.0),
             A.VerticalFlip(),
             A.HorizontalFlip(),
             A.RandomCrop(self.img_final_size, self.img_final_size, p = 1.0),
