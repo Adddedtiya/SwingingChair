@@ -180,6 +180,6 @@ class WrapperMAE:
             break
         
         # interleave images
-        interleaved_tensor = rearrange([input_patched_image, reconstructed_image], 't n c h w -> n c (h t) w')
+        interleaved_tensor = torch.cat([input_patched_image, reconstructed_image], dim = -1)
 
         return interleaved_tensor

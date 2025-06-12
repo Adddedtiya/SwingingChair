@@ -122,9 +122,9 @@ class TrackerAndLogger:
             title = 'Evaluation Values'
         )
     
-    def save_samples(self, sample : torch.Tensor, fname : str) -> None:
+    def save_samples(self, sample : torch.Tensor, fname : str, nrow : int = 8) -> None:
         fpath = os.path.join(self.samples_dir, fname)
-        save_image(sample, fpath)
+        save_image(sample, fpath, nrow  = nrow)
 
     def current_is_best(self) -> bool:
         return self.is_current_best
