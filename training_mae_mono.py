@@ -122,9 +122,9 @@ if __name__ == "__main__":
             )
         
         # save the latest model too
-        model_wrapper.save_state(
-            os.path.join(logger.weights_dir, 'weights_latest.pt')
-        )
+        # model_wrapper.save_state(
+        #     os.path.join(logger.weights_dir, 'weights_latest.pt')
+        # )
 
         # dont forget to write the samples
         logger.save_samples(model_wrapper.sample_generator(loader_eval), f'{current_epoch}_random.png', nrow = 1)
