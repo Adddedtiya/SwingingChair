@@ -14,6 +14,19 @@ from .image_directory import scan_directory
 
 from tqdm import tqdm
 
+
+class InvertColorsImage(A.ImageOnlyTransform):
+    def __init__(self, always_apply = False, p = 0.5):
+        super(InvertColorsImage, self).__init__(always_apply, p)
+
+    def apply(self, img : np.ndarray, **params):
+        # Invert image colors
+        return np.max(img) - img  
+
+    def get_transform_init_args_names(self):
+        return ()
+
+
 class ReconstructionDataset(Dataset):
     def __init__(self, dataset_root : str, phase : str = 'train', memory : bool = False, color : bool = False):
         super().__init__()
@@ -50,6 +63,7 @@ class ReconstructionDataset(Dataset):
             A.Affine(scale = [0.8, 1.2], translate_px = [-5, 5], rotate = [-45, 45], shear = [-30, 30], keep_ratio = True, p = 1.0),
             A.VerticalFlip(),
             A.HorizontalFlip(),
+            InvertColorsImage(),
             A.RandomCrop(self.img_final_size, self.img_final_size, p = 1.0),
         ]) if self.is_training else A.Compose([
             A.RandomCrop(self.img_final_size, self.img_final_size, p = 1.0)

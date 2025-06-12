@@ -102,6 +102,9 @@ class BasicViTEncoder(nn.Module):
         self.flatten_patch_size = input_channels * self.patch_height * self.patch_width
         self.total_patches      = (self.image_height // self.patch_height) * (self.image_width // self.patch_width)
 
+        # setup the latent size too
+        self.latent_size = latent_size
+
         # learnable positional embedding
         self.pos_embedding = nn.Parameter(torch.randn(1, self.total_patches, latent_size))
 
