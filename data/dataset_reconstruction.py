@@ -31,7 +31,7 @@ class ReconstructionDataset(Dataset):
 
         # image shape
         self.img_final_size = 128
-        self.img_load_size  = self.img_final_size + (self.img_final_size // 2)
+        self.img_load_size  = self.img_final_size + (self.img_final_size // 4)
 
         # get the image directory
         image_root_directory = os.path.join(dataset_root, self.subset)  
