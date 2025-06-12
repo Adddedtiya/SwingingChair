@@ -197,7 +197,7 @@ class MonoMAE(nn.Module):
             "n (h w) (ph pw c) -> n c (h ph) (w pw)", 
             ph = self.patch_height, 
             pw = self.patch_width,
-            c  = self.output_channels,
+            c  = self.patch_channel_count,
             h  = int(self.image_height // self.patch_height),
             w  = int(self.image_width  // self.patch_width)
         )

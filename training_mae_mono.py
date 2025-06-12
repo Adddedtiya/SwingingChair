@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser.add_argument('--color',        action = 'store_true')
     
     # MAE specific options
-    parser.add_argument('--depth',             type = int, default = 23)
+    parser.add_argument('--depth',             type = int, default = 27)
     parser.add_argument('--transfomer_heads',  type = int, default = 13)
     parser.add_argument('--transfomer_ffdim',  type = int, default = 2048)
     parser.add_argument('--mae_visible_ratio', type = float, default = 0.3)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         image_size      = 128,
         patch_size      = 16,
         latent_size     = latent_size,
-        depth           = parsed_args.encoder_depth,
+        depth           = parsed_args.depth,
         heads           = parsed_args.transfomer_heads,
         ff_dim          = parsed_args.transfomer_ffdim
     )
