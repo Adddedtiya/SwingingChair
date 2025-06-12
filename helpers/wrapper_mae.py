@@ -118,7 +118,8 @@ class WrapperMAE:
         image_tensor = image_tensor.to(self.device)
 
         # forward pass autoencoder
-        reconstructed_image : torch.Tensor = self.autoencoder(image_tensor)
+        patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device)
+        reconstructed_image : torch.Tensor = self.autoencoder(image_tensor, patches_indicies)
 
         # compute the evaluation metrics
         batch_stats = self.__compute_metrics(image_tensor, reconstructed_image)

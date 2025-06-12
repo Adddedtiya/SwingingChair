@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from einops import rearrange, reduce, repeat
-import model_sitv as sitv
+from .model_sitv import *
 
 # Implement MAE Models !
 
@@ -9,7 +9,7 @@ class SimpleMAE(nn.Module):
     def __init__(self, input_channels : int, output_channels : int, image_size : int, patch_size : int, latent_size : int, encoder_depth : int, decoder_depth : int, heads : int, ff_dim : int):
         super().__init__()
 
-        self.wrapped_encoder = sitv.BasicViTEncoder(
+        self.wrapped_encoder = BasicViTEncoder(
             input_channels = input_channels,
             image_size     = image_size,
             patch_size     = patch_size,
@@ -19,7 +19,7 @@ class SimpleMAE(nn.Module):
             ff_dim         = ff_dim 
         )
 
-        self.wrapped_decoder = sitv.BasicViTDecoder(
+        self.wrapped_decoder = BasicViTDecoder(
             output_channels = output_channels,
             image_size      = image_size,
             patch_size      = patch_size,
