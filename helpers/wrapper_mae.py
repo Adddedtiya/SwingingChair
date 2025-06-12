@@ -72,8 +72,8 @@ class WrapperMAE:
         }
         return xdict
     
-    def create_random_visible_indicies(self, visible_patches : float = 0.5, device = 'cpu') -> torch.Tensor:
-        return self.autoencoder.create_random_visible_indicies(visible_patches, device)
+    def create_random_visible_indicies(self, visible_patches : float = 0.5, device = 'cpu', batch_size : int = 1) -> torch.Tensor:
+        return self.autoencoder.create_random_visible_indicies(visible_patches, device, batch_size)
 
     def reconstruct_visible_patches(self, input_image_tensor : torch.Tensor, visible_indicies : torch.Tensor) -> torch.Tensor:
         return self.autoencoder.reconstruct_visible_patches(input_image_tensor, visible_indicies)
@@ -81,7 +81,7 @@ class WrapperMAE:
     def train_single_batch(self, image_tensor : torch.Tensor) -> dict[str, float]:
 
         # grab the input_tensor size
-        # batch_size, image_channels, image_H, image_W = image_tensor.shape
+        batch_size, image_channels, image_H, image_W = image_tensor.shape
 
         # ensure the models are in Train mode
         self.autoencoder.train()
@@ -90,7 +90,7 @@ class WrapperMAE:
         image_tensor = image_tensor.to(self.device)
 
         # forward pass autoencoder
-        patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device)
+        patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device, batch_size = batch_size)
         reconstructed_image : torch.Tensor = self.autoencoder(image_tensor, patches_indicies)
 
         # compute the loss and backprop
@@ -116,8 +116,11 @@ class WrapperMAE:
         # move the tensor to device
         image_tensor = image_tensor.to(self.device)
 
+        # grab the input_tensor size
+        batch_size, image_channels, image_H, image_W = image_tensor.shape
+        
         # forward pass autoencoder
-        patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device)
+        patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device, batch_size = batch_size)
         reconstructed_image : torch.Tensor = self.autoencoder(image_tensor, patches_indicies)
 
         # compute the evaluation metrics
@@ -169,8 +172,11 @@ class WrapperMAE:
             # move the tensor to device
             image_tensor = image_tensor.to(self.device)
 
+            # grab the input_tensor size
+            batch_size, image_channels, image_H, image_W = image_tensor.shape
+
             # forward pass autoencoder
-            patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device)
+            patches_indicies    : torch.Tensor = self.create_random_visible_indicies(self.visible_ratio, device = self.device, batch_size = batch_size)
             reconstructed_image : torch.Tensor = self.autoencoder(image_tensor, patches_indicies)
 
             # recons

@@ -72,10 +72,10 @@ class SimpleMAE(nn.Module):
 
         return decoded_image
 
-    def create_random_visible_indicies(self, visible_patches : float = 0.5, device = 'cpu') -> torch.Tensor:
+    def create_random_visible_indicies(self, visible_patches : float = 0.5, device = 'cpu', batch_size : int = 1) -> torch.Tensor:
         # create the indicies
         path_ratio   = int(visible_patches * self.wrapped_encoder.total_patches)
-        rand_indices = torch.rand(1, self.wrapped_encoder.total_patches, device = device).argsort(dim = -1)
+        rand_indices = torch.rand(batch_size, self.wrapped_encoder.total_patches, device = device).argsort(dim = -1)
         
         # select the indicies
         visible_indicies = rand_indices[:, :path_ratio]
