@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange, reduce, repeat
 from .model_sitv import *
+from .model_siav import SimpleResConv
 
 # Implement MAE Models !
 
@@ -113,6 +114,179 @@ class SimpleMAE(nn.Module):
             c  = self.wrapped_decoder.output_channels,
             h  = int(self.wrapped_decoder.image_height // self.wrapped_decoder.patch_height),
             w  = int(self.wrapped_decoder.image_width  // self.wrapped_decoder.patch_width)
+        )
+
+        return image_tensor
+
+
+class MonoMAE(nn.Module):
+    def __init__(self, input_channels : int, output_channels : int, image_size : int, patch_size : int, latent_size : int, depth : int, heads : int, ff_dim : int):
+        super().__init__()
+
+        # setup and sanity check
+        self.image_height, self.image_width = (image_size, image_size)
+        self.patch_height, self.patch_width = (patch_size, patch_size)
+        assert (self.image_height % self.patch_height == 0) and (self.image_width % self.patch_width) == 0, 'Image dimensions must be divisible by the patch size.'
+
+        # calculate the total patches, and the flatten patch size
+        self.flatten_patch_size = input_channels * self.patch_height * self.patch_width
+        self.total_patches      = (self.image_height // self.patch_height) * (self.image_width // self.patch_width)
+
+        # setup the latent size too
+        self.latent_size = latent_size
+        self.output_channels = output_channels
+
+        # learnable positional embedding
+        self.encoding_pos_embedding = nn.Parameter(torch.randn(1, self.total_patches, latent_size))
+        self.decoding_pos_embedding = nn.Parameter(torch.randn(1, self.total_patches, latent_size))
+
+        self.encoding_project_embbedding = nn.Sequential(
+            nn.LayerNorm(self.flatten_patch_size),
+            nn.Linear(self.flatten_patch_size, latent_size),
+            nn.LayerNorm(latent_size)
+        ) 
+
+        # the transfomer model it self 
+        self.transfomer = TransEncoder(
+            dim     = latent_size,
+            depth   = depth,
+            heads   = heads,
+            mlp_dim = ff_dim,
+        )
+
+        # special as we need to multiply it
+        self.patch_channel_count = (output_channels * 16)
+        self.output_patch_size   = self.patch_channel_count * self.patch_height * self.patch_width
+
+        # linearly project from embbedding to pixels
+        self.output_project_patches = nn.Sequential(
+            nn.Linear(latent_size, self.output_patch_size, bias = True),
+            nn.LeakyReLU()
+        )
+
+        self.output_conv = nn.Sequential(
+            SimpleResConv(self.patch_channel_count),
+            SimpleResConv(self.patch_channel_count),
+            nn.Conv2d(self.patch_channel_count, output_channels, kernel_size = 3, padding = 'same', bias = True),
+            nn.Sigmoid() 
+        )
+
+        self.mask_token = nn.Parameter(torch.randn(self.latent_size))
+
+    def encoder_flatten_to_patches(self, x : torch.Tensor) -> torch.Tensor:
+
+        # reshape and flatten the tensor (N, C, H, W) -> (N, patch_count, flatten_patch)
+        x = rearrange(x, "n c (h ph) (w pw) -> n (h w) (ph pw c)", ph = self.patch_height, pw = self.patch_width)
+
+        # project the flatten image to the shape (N, patch_count, latent_size)
+        x = self.encoding_project_embbedding(x)
+        
+        # add positional information on the embedding
+        x = x + self.encoding_pos_embedding
+
+        return x
+
+    def decode_to_pixels(self, embedding : torch.Tensor) -> torch.Tensor:
+
+        # convert the embeeding to pixels patches (N, L, E) -> (N, L, P) 
+        flatten_patches = self.output_project_patches(embedding)
+
+        # re-arrange the tensor to PyTorch Image Tensor (N, C, H, W)
+        image_tensor = rearrange(
+            flatten_patches, 
+            "n (h w) (ph pw c) -> n c (h ph) (w pw)", 
+            ph = self.patch_height, 
+            pw = self.patch_width,
+            c  = self.output_channels,
+            h  = int(self.image_height // self.patch_height),
+            w  = int(self.image_width  // self.patch_width)
+        )
+
+        image_tensor = self.output_conv(image_tensor)
+
+        return image_tensor
+
+    def forward(self, x : torch.Tensor, visible_indicies : torch.Tensor) -> torch.Tensor:
+        
+        ## Encoder Part of the Model ##
+
+        # get the forward exec variable shape
+        tensor_device = x.device
+        batch_size, _, _, _ = x.shape
+
+        # flattent the original image patches first + positional encoding
+        flatten_input_patches = self.encoder_flatten_to_patches(x)
+        
+        # select the patches from the decoder
+        selected_batch_range = torch.arange(batch_size, device = tensor_device).reshape(batch_size, 1)
+
+        # select patches form indicies
+        selected_input_patches = flatten_input_patches[selected_batch_range, visible_indicies]
+
+        # forward pass towards the encoder
+        selected_patches_embedding = self.transfomer(selected_input_patches)
+
+        ## Decoder Part of the Model ##
+
+        # create the decoder tokens + fill it with masks
+        decoder_tokens = torch.zeros(batch_size, self.total_patches, self.latent_size, device = tensor_device)
+        decoder_tokens[:, :] = self.mask_token
+
+        # replace at location where the original images have patches
+        decoder_tokens[selected_batch_range, visible_indicies] = selected_patches_embedding
+
+        # crate the input embedding from input tensor with positional embedding (N, L, E)
+        decoder_input_embbedding = decoder_tokens + self.decoding_pos_embedding
+
+        # pass the input embedding into the transfomer for decoding (N, L, E)
+        decoded_embedding = self.transfomer(decoder_input_embbedding)
+
+        # project the image to original shape
+        decoded_image = self.decode_to_pixels(decoded_embedding)
+
+        return decoded_image
+
+    def create_random_visible_indicies(self, visible_patches : float = 0.5, device = 'cpu', batch_size : int = 1) -> torch.Tensor:
+        # create the indicies
+        path_ratio   = int(visible_patches * self.total_patches)
+        rand_indices = torch.rand(batch_size, self.total_patches, device = device).argsort(dim = -1)
+        
+        # select the indicies
+        visible_indicies = rand_indices[:, :path_ratio]
+        return visible_indicies
+    
+
+    def reconstruct_visible_patches(self, input_image_tensor : torch.Tensor, visible_indicies : torch.Tensor) -> torch.Tensor:
+        
+        # flatten the input image
+        flatten_input_patches =  rearrange(
+            input_image_tensor, 
+            "n c (h ph) (w pw) -> n (h w) (ph pw c)", 
+            ph = self.patch_height, pw = self.patch_width
+        )
+
+        # torch information
+        tensor_device = input_image_tensor.device
+        batch_size, _, _, _ = input_image_tensor.shape
+
+        # create batch indexes
+        selected_batch_range = torch.arange(batch_size, device = tensor_device).reshape(batch_size, 1)
+        
+        # select the patches
+        visible_patches = flatten_input_patches[selected_batch_range, visible_indicies]
+
+        # reconstrcut tensor
+        target_flatten_tensor = torch.zeros_like(flatten_input_patches, device = tensor_device)
+        target_flatten_tensor[selected_batch_range, visible_indicies] = visible_patches
+
+        image_tensor = rearrange(
+            target_flatten_tensor, 
+            "n (h w) (ph pw c) -> n c (h ph) (w pw)", 
+            ph = self.patch_height, 
+            pw = self.patch_width,
+            c  = self.output_channels,
+            h  = int(self.image_height // self.patch_height),
+            w  = int(self.image_width  // self.patch_width)
         )
 
         return image_tensor
