@@ -18,7 +18,7 @@ class WrapperQAE:
     def __init__(
             self,
             autoencoder     : nn.Module,
-            latent_size     : int,
+            latent_size     : int          = 8,
             device          : torch.device = 'cpu' 
         ):
 
