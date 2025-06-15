@@ -171,4 +171,7 @@ class WrapperQAE:
             # we only want 1 guess
             break
 
-        return reconstructed_image
+        # interleave images
+        interleaved_tensor = torch.cat([image_tensor, reconstructed_image], dim = -1)
+
+        return interleaved_tensor

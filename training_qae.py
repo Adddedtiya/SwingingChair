@@ -110,7 +110,7 @@ if __name__ == "__main__":
         # )
 
         # dont forget to write the samples
-        # logger.save_samples(model_wrapper.sample_generator(loader_eval), f'{current_epoch}_random.png')
+        logger.save_samples(model_wrapper.sample_generator(loader_eval), f'{current_epoch}_random.png')
 
         # write stats
         logger.write()
