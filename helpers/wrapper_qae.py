@@ -92,7 +92,8 @@ class WrapperQAE:
         psnr_loss  = 1.0 - peak_signal_noise_ratio(reconstructed_image, image_tensor)
         
         # combine the loss terms 
-        combined_loss = (psnr_loss + recon_loss + entropy_aux_loss) 
+        image_loss = (psnr_loss + recon_loss) / 2
+        combined_loss = (image_loss + entropy_aux_loss) 
         combined_loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()

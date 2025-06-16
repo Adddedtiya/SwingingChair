@@ -5,7 +5,7 @@ import torch.nn.functional  as F
 from einops import rearrange, reduce, repeat, einsum
 
 # pip install vector-quantize-pytorch
-from vector_quantize_pytorch import LFQ
+from vector_quantize_pytorch import VectorQuantize
 
 ### Machine Learning Models ###
 
@@ -134,10 +134,12 @@ class LigweightAutoencoderK512(nn.Module):
         self.encoder = LightweightEncoderV7(input_channels)
         self.decoder = LightweightDecoderV7(output_channels)
 
-        self.quantizer = LFQ(
-            dim = 8,                    # this is the input feature dimension, defaults to log2(codebook_size) if not defined
-            entropy_loss_weight = 0.1,  # how much weight to place on entropy loss
-            diversity_gamma = 1.        # within entropy loss, how much weight to give to diversity of codes, taken from https://arxiv.org/abs/1911.05894
+        self.quantizer = VectorQuantize(
+            dim = 8,
+            codebook_size = 256,
+            codebook_dim  = 8,
+            use_cosine_sim    = True,
+            accept_image_fmap = True
         )
 
     def forward(self, x : torch.Tensor) -> torch.Tensor:
