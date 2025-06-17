@@ -141,6 +141,17 @@ class LigweightAutoencoderK512(nn.Module):
             use_cosine_sim    = True,
             accept_image_fmap = True
         )
+        
+    def freeze_anything_but_head(self) -> None:
+        # try to freez the param
+        for param_name, param_object in self.named_parameters():
+            if param_name.startswith("decoder.convolutional_layers.15"):
+                break
+
+            # freeze until decoder conv layer 15
+            param_object.requires_grad = False
+        print("! Anything but the few head layers are frozen !")
+
 
     def forward(self, x : torch.Tensor) -> torch.Tensor:
         x = self.encoder(x)
