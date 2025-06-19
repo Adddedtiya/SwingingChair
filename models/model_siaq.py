@@ -152,6 +152,15 @@ class LigweightAutoencoderK512(nn.Module):
             param_object.requires_grad = False
         print("! Anything but the few head layers are frozen !")
 
+    def freeze_layers_except(self, layers : list[str]) -> None:
+        # freeze layer but the selected one
+        for param_name, param_object in self.named_parameters():
+            if any(x.startswith(param_name) for x in layers):
+                continue
+
+            param_object.requires_grad = False
+
+        print(f"! Anything but {layers} layers are frozen !")
 
     def forward(self, x : torch.Tensor) -> torch.Tensor:
         x = self.encoder(x)
@@ -247,25 +256,10 @@ if __name__ == "__main__":
     print("SIAK")
 
     m = LigweightAutoencoderK512(1, 1)
+    m.freeze_layers_except(['quantizer'])
 
-    lldict = torch.load('./weights/q512e32_best_weight_at150.pt', map_location = 'cpu', weights_only = True)
-    m.load_state_dict(lldict['autoencoder'])
-    m.eval()
-
-    xt = torch.rand(1, 1, 512, 512)
-
-
-    x = m.encoder(xt)
-    quantized, inidicies, entropy_aux_loss = m.quantizer(x)
-    print(entropy_aux_loss)
-    print(inidicies.shape)
-    print(inidicies)
-
-    quant_from_indicies = m.quantizer.get_output_from_indices(inidicies)
-    quant_from_indicies = rearrange(quant_from_indicies, 'n h w c -> n c h w')
-    print(quantized.shape, quant_from_indicies.shape)
-
-    print(torch.equal(quant_from_indicies, quantized))
+    for pname, pobj in m.named_parameters():
+        print(pname, '\t' ,pobj.requires_grad)
 
 
 
