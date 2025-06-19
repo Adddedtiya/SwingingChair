@@ -72,7 +72,7 @@ class ReconstructionDataset(Dataset):
         # load to memory if flag is enabled
         self.image_array_list : list[np.ndarray] = []
         if self.memory:
-            print("> Load Files to Memory !")
+            print("| Load Files to Memory !")
             self.__load_to_memory()
 
         print(f"| Loaded '{self.subset}' with {len(self.image_files_paths)} | Cache : {len(self.image_array_list)}")

@@ -7,9 +7,9 @@ import numpy as np
 
 from data.dataset_reconstruction import ReconstructionDataset
 from helpers.dictonary_tracker   import TrackerAndLogger
+from helpers.speed_tracker       import TimeTracker
 from helpers.wrapper_qae         import WrapperQAE
 from models.model_siaq           import LigweightAutoencoderK512
-
 # Deterministic Algorithms
 SEED = 424242
 torch.manual_seed(SEED)
@@ -82,8 +82,9 @@ if __name__ == "__main__":
     print("| Setup Complete Start Training !")    
     for current_epoch in range(total_epochs):
 
+        TimeTracker.start_clock()
         print(f"| Current Epoch {current_epoch + 1}/{total_epochs}")
-        
+
         # Train the Model For a single epoch
         train_stats = model_wrapper.train_single_epoch(loader_train)
 
@@ -113,7 +114,7 @@ if __name__ == "__main__":
         # )
 
         # dont forget to write the samples
-        logger.save_samples(model_wrapper.sample_generator(loader_eval), f'{current_epoch}_random.png')
+        logger.save_samples(model_wrapper.sample_generator(loader_eval), f'{current_epoch}_eval_sample.png', nrow = 1)
 
         # write stats
         logger.write()
@@ -133,6 +134,11 @@ if __name__ == "__main__":
             fname = 'psnr_plot.png'
         )
 
+        # compute the ETA here !
+        TimeTracker.stop_clock()
+        remaning_epoch  = total_epochs - (current_epoch + 1)
+        time_estimation = TimeTracker.estimate_time(remaning_epoch) 
+        print("|", time_estimation)
         print("|", flush = True)
 
     print("| Training is Complete !")
