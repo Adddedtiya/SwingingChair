@@ -31,6 +31,7 @@ if __name__ == "__main__":
     parser.add_argument('--name'        , type = str, default = '')
     parser.add_argument('--memory_cache', action = 'store_true')
     parser.add_argument('--color',        action = 'store_true')
+    parser.add_argument('--image_size',   type = int, default = 512)
 
     # Prase the Arguemnts
     parsed_args  = parser.parse_args()    
@@ -41,12 +42,14 @@ if __name__ == "__main__":
     exp_name     : str  = parsed_args.name
     memory_cache : bool = parsed_args.memory_cache
     use_colour   : bool = parsed_args.color
+    image_size   : int = parsed_args.image_size
 
     print("| Pytorch Model Training !")
     print("| Total Epoch :", total_epochs)
     print("| Batch Size  :", batch_size)
     print("| Workers     :", load_threads)
     print("| Device      :", device)
+    print("| Size        :", image_size)
     print("| Name        :", exp_name)
     print("| Mem-Only    :", memory_cache)
 
@@ -67,9 +70,9 @@ if __name__ == "__main__":
     )
 
     # Create Dataset
-    train_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache, use_colour)
-    eval_dataset  = ReconstructionDataset(dataset_root, 'eval',  memory_cache, use_colour)
-    test_dataset  = ReconstructionDataset(dataset_root, 'test',  memory_cache, use_colour)
+    train_dataset = ReconstructionDataset(dataset_root, 'train', memory_cache, use_colour, image_size)
+    eval_dataset  = ReconstructionDataset(dataset_root, 'eval',  memory_cache, use_colour, image_size)
+    test_dataset  = ReconstructionDataset(dataset_root, 'test',  memory_cache, use_colour, image_size)
 
     # create the dataloaders
     loader_eval  = eval_dataset.create_dataloader(batch_size, load_threads, device, shuffle = False)
