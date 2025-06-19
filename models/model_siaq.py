@@ -155,7 +155,7 @@ class LigweightAutoencoderK512(nn.Module):
     def freeze_layers_except(self, layers : list[str]) -> None:
         # freeze layer but the selected one
         for param_name, param_object in self.named_parameters():
-            if any(x.startswith(param_name) for x in layers):
+            if any(param_name.startswith(x) for x in layers):
                 continue
 
             param_object.requires_grad = False
@@ -256,7 +256,11 @@ if __name__ == "__main__":
     print("SIAK")
 
     m = LigweightAutoencoderK512(1, 1)
-    m.freeze_layers_except(['quantizer'])
+
+    ld = torch.load('./runs/cockatoo_jellyfish/weights/weights_best.pt', map_location = 'cpu')
+    m.load_state_dict(ld['autoencoder'])
+
+    m.freeze_layers_except(['encoder.output_projection', 'decoder.conv_project'])
 
     for pname, pobj in m.named_parameters():
         print(pname, '\t' ,pobj.requires_grad)
