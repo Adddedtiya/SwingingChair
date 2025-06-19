@@ -5,15 +5,18 @@ class TimeTracker:
     start_time   : float = 0.0
     elapsed_time : float = 0.0
 
-    def start_clock(cls) -> None:
-        cls.start_time = current_time()
+    @staticmethod
+    def start_clock() -> None:
+        TimeTracker.start_time = current_time()
     
-    def stop_clock(cls) -> None:
+    @staticmethod
+    def stop_clock() -> None:
         current = current_time()
-        cls.elapsed_time = current - cls.start_time
+        TimeTracker.elapsed_time = current - TimeTracker.start_time
 
-    def estimate_time(cls, ammount : int) -> str:
-        estimated_time = cls.elapsed_time * ammount
+    @staticmethod
+    def estimate_time(ammount : int) -> str:
+        estimated_time = TimeTracker.elapsed_time * ammount
 
         # Convert to days, hours, minutes, seconds
         days,  rem = divmod(estimated_time, 86400)
