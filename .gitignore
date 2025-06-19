@@ -51,6 +51,7 @@ scripts/
 scripts/*.ps1
 singularity/
 dataset/
+run*/*
 
 # Ingore testings
 amx_*
