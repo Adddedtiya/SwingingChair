@@ -35,18 +35,20 @@ if __name__ == "__main__":
     parser.add_argument('--color',        action = 'store_true')
     parser.add_argument('--image_size',   type = int, default = 512)
     parser.add_argument('--ae_weight',    type = str)
+    parser.add_argument('--mask_ratio',   type = float, default = 0.4)
 
     # Prase the Arguemnts
     parsed_args  = parser.parse_args()    
-    total_epochs : int  = parsed_args.total_epochs
-    batch_size   : int  = parsed_args.batch_size
-    load_threads : int  = parsed_args.load_threads
-    dataset_root : str  = parsed_args.dataset_root
-    exp_name     : str  = parsed_args.name
-    memory_cache : bool = parsed_args.memory_cache
-    use_colour   : bool = parsed_args.color
-    image_size   : int  = parsed_args.image_size
-    ae_weight    : str  = parsed_args.ae_weight
+    total_epochs : int   = parsed_args.total_epochs
+    batch_size   : int   = parsed_args.batch_size
+    load_threads : int   = parsed_args.load_threads
+    dataset_root : str   = parsed_args.dataset_root
+    exp_name     : str   = parsed_args.name
+    memory_cache : bool  = parsed_args.memory_cache
+    use_colour   : bool  = parsed_args.color
+    image_size   : int   = parsed_args.image_size
+    ae_weight    : str   = parsed_args.ae_weight
+    mask_ratio   : float = parsed_args.mask_ratio
 
     print("| Pytorch Model Training !")
     print("| Total Epoch :", total_epochs)
@@ -58,7 +60,7 @@ if __name__ == "__main__":
     print("| Mem-Only    :", memory_cache)
 
     # create Trackers
-    logger = TrackerAndLogger('./runs', exp_name, metric_to_track = 'top-1')
+    logger = TrackerAndLogger('./runs', exp_name, metric_to_track = 'top_1')
 
     # for model and dataloader
     colour_channels = 3 if use_colour else 1
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     model_wrapper = WrapperMAET(
         autoencoder  = autoencoder_model,
         model        = murq_model,
-        masked_ratio = 0.4,
+        masked_ratio = mask_ratio,
         device       = device
     )
 

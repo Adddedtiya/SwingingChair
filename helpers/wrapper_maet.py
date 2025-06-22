@@ -79,9 +79,14 @@ class WrapperMAET:
         }
         return xdict
 
-    def __compute_classification_metrics(self, x_real : torch.tensor, y_logits : torch.Tensor) -> dict[str, float]:
+    def __compute_classification_metrics(self, x_real : torch.Tensor, y_logits : torch.Tensor) -> dict[str, float]:
 
-        # compute the accuracy
+        # to calm the error
+        y_logits = rearrange(y_logits, 'n l c -> n c l')
+
+        # print(">>>", x_real.shape, y_logits.shape)
+
+        # compute the accuracy  
         top_1 = multiclass_accuracy(y_logits, x_real, num_classes = 256, top_k = 1).item()
         top_5 = multiclass_accuracy(y_logits, x_real, num_classes = 256, top_k = 5).item()
 
@@ -161,10 +166,15 @@ class WrapperMAET:
         predicted_indicies, predicted_logits = self.model_forward_indicies_logits(flatten_z_quant, random_masked_indicies)
 
         # compute the output as classification task metric
-        acc_stats = self.__compute_classification_metrics(predicted_logits, flatten_indicies)
+        selected_batch_range = torch.arange(batch_size, device = self.device).reshape(batch_size, 1)
+
+        # compute only on the missing tokens as classification task metric
+        real_missing_indicies = flatten_indicies[selected_batch_range, random_masked_indicies]
+        pred_missing_indicies = predicted_logits[selected_batch_range, random_masked_indicies]
+        acc_stats = self.__compute_classification_metrics(real_missing_indicies, pred_missing_indicies)
 
         # grab the predicted indicies
-        flatten_indicies[:, random_masked_indicies] = predicted_indicies[:, random_masked_indicies]
+        flatten_indicies[selected_batch_range, random_masked_indicies] = predicted_indicies[selected_batch_range, random_masked_indicies]
 
         # reconstruct the image based on the new indicies
         reconstructed_image = self.autoencoder_decoder_tokens(flatten_indicies)
@@ -210,6 +220,8 @@ class WrapperMAET:
 
         for sub_index, (image_tensor) in enumerate(evaluation_dataloader):
             
+            print("|- Index :", sub_index)
+            
             # compute the batch metrics
             var_stats = self.evaluate_single_batch(image_tensor)
 
@@ -225,15 +237,38 @@ class WrapperMAET:
         for image_tensor in evaluation_dataloader:
 
             # move the tensor to device
-            image_tensor = image_tensor.to(self.device)
+            image_tensor : torch.Tensor = image_tensor.to(self.device)
 
-            # forward pass autoencoder
-            reconstructed_image : torch.Tensor = self.autoencoder(image_tensor)
+            # grab the input_tensor size
+            batch_size, image_channels, image_H, image_W = image_tensor.shape
+
+            # forward pass the encoder first
+            flatten_z_quant, flatten_indicies, onehot_indicies = self.autoencoder_encoder_tokens_targets(image_tensor)
+
+            # direct reconstruction 
+            direct_reconstruction = self.autoencoder_decoder_tokens(flatten_indicies)
+
+            ### fancy missing reconstruction
+
+            # create random indicies
+            random_masked_indicies = self.create_random_masked_indicies(batch_size)
+
+            # forward the model with the randomly generated missing tokens 
+            predicted_indicies, _ = self.model_forward_indicies_logits(flatten_z_quant, random_masked_indicies)
+
+            # create a batch range selection tensor
+            selected_batch_range = torch.arange(batch_size, device = self.device).reshape(batch_size, 1)
+
+            # grab the predicted indicies
+            flatten_indicies[selected_batch_range, random_masked_indicies] = predicted_indicies[selected_batch_range, random_masked_indicies]
+
+            # reconstruct the image based on the new indicies
+            reconstructed_image = self.autoencoder_decoder_tokens(flatten_indicies)
 
             # we only want 1 guess
             break
 
         # interleave images
-        interleaved_tensor = torch.cat([image_tensor, reconstructed_image], dim = -1)
+        interleaved_tensor = torch.cat([image_tensor, direct_reconstruction, reconstructed_image], dim = -1)
 
         return interleaved_tensor
