@@ -40,7 +40,7 @@ class WrapperMAET:
         self.model = model.to(device)
 
         # create the optimizer
-        self.optimizer = torch.optim.AdamW(self.model, lr = 2e-4)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr = 2e-4)
 
         # create a static noise
         self.static_noise = torch.rand(1, self.latent_size, device = self.device)
