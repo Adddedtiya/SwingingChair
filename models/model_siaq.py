@@ -68,6 +68,18 @@ class LightweightDecoderV7(nn.Module):
 
         return x
 
+    def forward_head_conv(self, x : torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        # projection
+        x_project = self.conv_project(x)
+
+        # feature generations
+        x_conv_out = self.convolutional_layers(x_project)
+
+        # output projection
+        x_final_out = self.head(x_conv_out)
+
+        return (x_conv_out, x_final_out)
+
 
 class LightweightEncoderV7(nn.Module):
     def __init__(self, input_channels : int):
@@ -187,7 +199,39 @@ class LigweightAutoencoderK512(nn.Module):
     
     def forwar_decoder(self, x : torch.Tensor) -> torch.Tensor:
         return self.decoder(x)
+    
+    def forward_decoder_tuple(self, x : torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.decoder.forward_head_conv(x)
 
+    def forward_encoder_tokens_targets(self, x : torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        compressed_latent = self.encoder(x)
+        z_quant, indc_tensor, _ = self.quantizer(compressed_latent)
+
+        # flatten indicies tensors
+        flatten_indicies : torch.Tensor = rearrange(indc_tensor, 'n h w -> n (h w)')
+        flatten_indicies : torch.Tensor = flatten_indicies.to(torch.long)
+        
+        # convert to one hot indicies
+        onehot_indicies  : torch.Tensor = nn.functional.one_hot(flatten_indicies, num_classes = 256).to(torch.float32)
+
+        # flatten z space
+        flatten_z_quant : torch.Tensor = rearrange(z_quant, 'n c h w -> n (h w) c')
+        flatten_z_quant : torch.Tensor = flatten_z_quant.detach()
+
+        return (flatten_z_quant, flatten_indicies, onehot_indicies)
+
+    def forward_decoder_tokens(self, x : torch.Tensor) -> torch.Tensor:
+
+        # reshape the indicies
+        reshaped_indicies : torch.Tensor = rearrange(x, 'n (h w) -> n h w', h = 32, w = 32)
+
+        # decode the tensor
+        latent_tensor : torch.Tensor = self.quantizer.get_output_from_indices(reshaped_indicies)
+        latent_tensor : torch.Tensor = rearrange(latent_tensor, 'n h w c -> n c h w')
+
+        # forward pass the model
+        decoded_tensor = self.decoder(latent_tensor)
+        return decoded_tensor
 
 ### Functional Blocks ###
 
@@ -257,14 +301,22 @@ if __name__ == "__main__":
 
     m = LigweightAutoencoderK512(1, 1)
 
-    ld = torch.load('./runs/cockatoo_jellyfish/weights/weights_best.pt', map_location = 'cpu')
-    m.load_state_dict(ld['autoencoder'])
+    # ld = torch.load('./runs/cockatoo_jellyfish/weights/weights_best.pt', map_location = 'cpu')
+    # m.load_state_dict(ld['autoencoder'])
 
-    m.freeze_layers_except(['encoder.output_projection', 'decoder.conv_project'])
+    # m.freeze_layers_except(['encoder.output_projection', 'decoder.conv_project'])
 
-    for pname, pobj in m.named_parameters():
-        print(pname, '\t' ,pobj.requires_grad)
-
-
+    # for pname, pobj in m.named_parameters():
+    #     print(pname, '\t' ,pobj.requires_grad)
 
 
+    t = torch.rand(1, 1, 512, 512)
+    flatten_z_quant, flatten_indicies, onehot_indicies = m.forward_encoder_tokens_targets(t)
+    print(flatten_z_quant.shape)   # N 1024 8
+    print(flatten_indicies.shape)  # N 1024
+    print(onehot_indicies.shape)   # N 1024 256
+    
+    print('---')
+
+    y = m.forward_decoder_tokens(flatten_indicies)
+    print(y.shape)
