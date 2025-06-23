@@ -265,10 +265,30 @@ class WrapperMAET:
             # reconstruct the image based on the new indicies
             reconstructed_image = self.autoencoder_decoder_tokens(flatten_indicies)
 
+            # add a special about masked images
+            patch_size = 16 # input_size / encoded_size
+            
+            # reshape and flatten the tensor (N, C, H, W) -> (N, patch_count, flatten_patch)
+            flatten_image = rearrange(image_tensor, "n c (h ph) (w pw) -> n (h w) (ph pw c)", ph = patch_size, pw = patch_size)
+            
+            # fill the mask values with 0
+            flatten_image[selected_batch_range, random_masked_indicies] = 0.0
+
+            # cast it back..
+            image_with_patches = rearrange(
+                flatten_image, 
+                "n (h w) (ph pw c) -> n c (h ph) (w pw)", 
+                ph = patch_size, 
+                pw = patch_size,
+                c  = 1,
+                h  = int(image_H // patch_size),
+                w  = int(image_W  // patch_size)
+            )
+
             # we only want 1 guess
             break
 
         # interleave images
-        interleaved_tensor = torch.cat([image_tensor, direct_reconstruction, reconstructed_image], dim = -1)
+        interleaved_tensor = torch.cat([image_tensor, direct_reconstruction, image_with_patches, reconstructed_image], dim = -1)
 
         return interleaved_tensor
