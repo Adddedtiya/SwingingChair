@@ -28,7 +28,7 @@ class InvertColorsImage(A.ImageOnlyTransform):
 
 
 class ReconstructionDataset(Dataset):
-    def __init__(self, dataset_root : str, phase : str = 'train', memory : bool = False, color : bool = False, final_size : int = 512):
+    def __init__(self, dataset_root : str, phase : str = 'train', memory : bool = False, color : bool = False, image_size : int = 512):
         super().__init__()
 
         # for checking if color or grayscale
@@ -43,7 +43,7 @@ class ReconstructionDataset(Dataset):
         self.is_training = bool(self.subset == 'train')
 
         # image shape
-        self.img_final_size = final_size
+        self.img_final_size = image_size
         self.img_load_size  = self.img_final_size + (self.img_final_size // 4)
 
         # get the image directory
@@ -72,7 +72,7 @@ class ReconstructionDataset(Dataset):
         # load to memory if flag is enabled
         self.image_array_list : list[np.ndarray] = []
         if self.memory:
-            print("| Load Files to Memory !")
+            print("> Load Files to Memory !")
             self.__load_to_memory()
 
         print(f"| Loaded '{self.subset}' with {len(self.image_files_paths)} | Cache : {len(self.image_array_list)}")

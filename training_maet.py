@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument('--image_size',   type = int, default = 512)
     parser.add_argument('--ae_weight',    type = str)
     parser.add_argument('--mask_ratio',   type = float, default = 0.4)
-
+    
     # Prase the Arguemnts
     parsed_args  = parser.parse_args()    
     total_epochs : int   = parsed_args.total_epochs
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     murq_model = SimpleMurq(
         input_size     = 8,
         length         = 1024,
-        output_classes = 256,
+        output_classes = 64,
         latent_size    = 768,
         depth          = 13,
         heads          = 12,

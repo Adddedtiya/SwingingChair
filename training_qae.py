@@ -10,6 +10,7 @@ from helpers.dictonary_tracker   import TrackerAndLogger
 from helpers.speed_tracker       import TimeTracker
 from helpers.wrapper_qae         import WrapperQAE
 from models.model_siaq           import LigweightAutoencoderK512
+
 # Deterministic Algorithms
 SEED = 424242
 torch.manual_seed(SEED)
