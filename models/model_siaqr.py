@@ -192,7 +192,8 @@ class LigweightAutoencoderRK512(nn.Module):
 
         # compute the codebook first
         quantized, _, entropy_aux_loss = self.quantizer(x)
-
+        entropy_aux_loss = torch.mean(entropy_aux_loss)
+        
         x = self.decoder(quantized)
         return x, entropy_aux_loss
 
