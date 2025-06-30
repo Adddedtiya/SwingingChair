@@ -303,7 +303,7 @@ class SimpleResConv(nn.Module):
 if __name__ == "__main__":
     print("SIAK")
 
-    m = LigweightAutoencoderK512(1, 1)
+    m = LigweightAutoencoderRK512(1, 1)
 
     # ld = torch.load('./runs/cockatoo_jellyfish/weights/weights_best.pt', map_location = 'cpu')
     # m.load_state_dict(ld['autoencoder'])
