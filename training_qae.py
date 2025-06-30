@@ -10,6 +10,7 @@ from helpers.dictonary_tracker   import TrackerAndLogger
 from helpers.speed_tracker       import TimeTracker
 from helpers.wrapper_qae         import WrapperQAE
 from models.model_siaq           import LigweightAutoencoderK512
+from models.model_siaqr          import LigweightAutoencoderRK512
 
 # Deterministic Algorithms
 SEED = 424242
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     colour_channels = 3 if use_colour else 1
 
     # create the model in the wrapper 
-    autoencoder_model = LigweightAutoencoderK512(
+    autoencoder_model = LigweightAutoencoderRK512(
         input_channels  = colour_channels,
         output_channels = colour_channels
     )
