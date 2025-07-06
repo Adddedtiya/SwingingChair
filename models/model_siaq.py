@@ -300,6 +300,9 @@ if __name__ == "__main__":
     print("SIAK")
 
     m = LigweightAutoencoderK512(1, 1)
+    for param_name, param_object in m.named_parameters():
+        print(param_name)
+
 
     # ld = torch.load('./runs/cockatoo_jellyfish/weights/weights_best.pt', map_location = 'cpu')
     # m.load_state_dict(ld['autoencoder'])
@@ -310,13 +313,13 @@ if __name__ == "__main__":
     #     print(pname, '\t' ,pobj.requires_grad)
 
 
-    t = torch.rand(1, 1, 512, 512)
-    flatten_z_quant, flatten_indicies, onehot_indicies = m.forward_encoder_tokens_targets(t)
-    print(flatten_z_quant.shape)   # N 1024 8
-    print(flatten_indicies.shape)  # N 1024
-    print(onehot_indicies.shape)   # N 1024 256
+    # t = torch.rand(1, 1, 512, 512)
+    # flatten_z_quant, flatten_indicies, onehot_indicies = m.forward_encoder_tokens_targets(t)
+    # print(flatten_z_quant.shape)   # N 1024 8
+    # print(flatten_indicies.shape)  # N 1024
+    # print(onehot_indicies.shape)   # N 1024 256
     
-    print('---')
+    # print('---')
 
-    y = m.forward_decoder_tokens(flatten_indicies)
-    print(y.shape)
+    # y = m.forward_decoder_tokens(flatten_indicies)
+    # print(y.shape)
