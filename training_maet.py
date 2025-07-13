@@ -72,11 +72,12 @@ if __name__ == "__main__":
     )
     ae_weights = torch.load(ae_weight, map_location = device)
     autoencoder_model.load_state_dict(ae_weights['autoencoder'])
+    autoencoder_model.freeze_layers_except([])
 
     murq_model = SimpleMurq(
         input_size     = 8,
         length         = 1024,
-        output_classes = 64,
+        output_classes = 256,
         latent_size    = 768,
         depth          = 13,
         heads          = 12,
