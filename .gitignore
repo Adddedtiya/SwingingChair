@@ -57,3 +57,11 @@ run*
 # Ingore testings
 amx_*
 *.pt
+
+# Ingore Extra Modules
+taming*/**
+taming/
+custom*
+custom/
+sample/
+main.py
